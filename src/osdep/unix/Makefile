@@ -494,7 +494,7 @@ isc:	# Interactive
 lnp:	# Linux Pluggable Authentication modules
 	$(BUILD) `$(CAT) SPECIALS` OS=slx \
 	 SIGTYPE=psx CHECKPW=pam CRXTYPE=nfs \
-	 SPOOLDIR=/var/spool \
+	 SPOOLDIR=/var/spool MAILSPOOL=/var/mail \
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
 	 BASECFLAGS="$(GCCCFLAGS)" \
@@ -503,7 +503,7 @@ lnp:	# Linux Pluggable Authentication modules
 lnps:	# Linux Pluggable Authentication modules (c-client as shared lib)
 	$(BUILD) `$(CAT) SPECIALS` OS=lnx \
 	 SIGTYPE=psx CHECKPW=pam CRXTYPE=nfs \
-	 SPOOLDIR=/var/spool \
+	 SPOOLDIR=/var/spool MAILSPOOL=/var/mail \
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
 	 BASECFLAGS="-fPIC $(GCCCFLAGS)" \
