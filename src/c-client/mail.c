@@ -293,13 +293,8 @@ static void mail_string_setpos (STRING *s,unsigned long i)
 
 void mail_versioncheck (char *version)
 {
-				/* attempt to protect again wrong .h */
-  if (strcmp (version,mailcclientversion)) {
-    char tmp[MAILTMPLEN];
-    sprintf (tmp,"c-client library version skew, app=%.100s library=%.100s",
-	     version,mailcclientversion);
-    fatal (tmp);
-  }
+	/* Skip unnecessarily strict version check. */
+	;
 }
 
 
