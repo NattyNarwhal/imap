@@ -29,11 +29,11 @@
 GSSDIR=/usr/local
 GSSINCLUDE=$(GSSDIR)/include
 GSSLIB=$(GSSDIR)/lib
-GSSCFLAGS= -I$(GSSINCLUDE) -DGSS_C_NT_HOSTBASED_SERVICE=gss_nt_service_name -DKRB5_DEPRECATED=1
+GSSCFLAGS=$(shell krb5-config.mit --cflags gssapi) -DGSS_C_NT_HOSTBASED_SERVICE=gss_nt_service_name -DKRB5_DEPRECATED=1
 GSSOLDLDFLAGS= -L$(GSSLIB) -lgssapi_krb5 -lkrb5 -lcrypto -lcom_err
 GSSNEWLDFLAGS= -L$(GSSLIB) -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err
 
 gss:	# GSSAPI Kerberos V flags
 	echo $(GSSCFLAGS) >> OSCFLAGS
-	sh -c '(test -f $(GSSLIB)/libk5crypto.a) && echo $(GSSNEWLDFLAGS) || echo $(GSSOLDLDFLAGS)' >> LDFLAGS
+	krb5-config.mit --libs gssapi >> LDFLAGS
 	echo "#include \"kerb_mit.c\"" >> auths.c

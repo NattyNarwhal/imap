@@ -497,7 +497,7 @@ lnp:	# Linux Pluggable Authentication modules
 	 SPOOLDIR=/var/spool MAILSPOOL=/var/mail \
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
-	 BASECFLAGS="$(GCCCFLAGS)" \
+	 BASECFLAGS="$(GCCCFLAGS) $(shell krb5-config.mit --cflags gssapi)" \
 	 BASELDFLAGS="../c-client/c-client.a $(PAMLDFLAGS)"
 
 lnps:	# Linux Pluggable Authentication modules (c-client as shared lib)
@@ -506,11 +506,11 @@ lnps:	# Linux Pluggable Authentication modules (c-client as shared lib)
 	 SPOOLDIR=/var/spool MAILSPOOL=/var/mail \
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
-	 BASECFLAGS="-fPIC $(GCCCFLAGS)" \
+	 BASECFLAGS="-fPIC $(GCCCFLAGS) $(shell krb5-config.mit --cflags gssapi)" \
 	 ARCHIVE="libc-client.so" \
 	 BASELDFLAGS="-L../c-client -lc-client $(PAMLDFLAGS) -lc" \
 	 ARRC="$(CC) --shared -Wl,-soname,libc-client.so.$(VERSION) -o" \
-	 LIBRARIES="$(PAMLDFLAGS) $(EXTRALDFLAGS) $(SSLLDFLAGS) -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err" \
+	 LIBRARIES="$(PAMLDFLAGS) $(EXTRALDFLAGS) $(SSLLDFLAGS) $(shell krb5-config.mit --libs gssapi)" \
 	 RANLIB=true
 
 lnx:	# Linux non-shadow passwords
