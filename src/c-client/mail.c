@@ -1932,7 +1932,10 @@ char *mail_fetch_body (MAILSTREAM *stream,unsigned long msgno,char *section,
   memset (&stream->private.string,NIL,sizeof (STRING));
   if (!(section && *section))	/* top-level text wanted? */
     return mail_fetch_message (stream,msgno,len,flags);
-  else if (strlen (section) > (MAILTMPLEN - 20)) return "";
+  else if (strlen (section) > (MAILTMPLEN - 20)) {
+    if (len) *len = 0;
+    return "";
+  }
   flags &= ~FT_INTERNAL;	/* can't win with this set */
 				/* initialize message data identifier */
   INIT_GETS (md,stream,msgno,section,0,0);
