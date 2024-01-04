@@ -472,16 +472,14 @@ long ssl_getbuffer (SSLSTREAM *stream,unsigned long size,char *buffer)
 
 long ssl_getdata (SSLSTREAM *stream)
 {
-  int i,sock;
-  fd_set fds,efds;
-  struct timeval tmo;
+  int i,sock,tmo;
+  struct pollfd pfd;
   tcptimeout_t tmoh = (tcptimeout_t) mail_parameters (NIL,GET_TIMEOUT,NIL);
   long ttmo_read = (long) mail_parameters (NIL,GET_READTIMEOUT,NIL);
   time_t t = time (0);
   blocknotify_t bn = (blocknotify_t) mail_parameters (NIL,GET_BLOCKNOTIFY,NIL);
   if (!stream->con || ((sock = SSL_get_fd (stream->con)) < 0)) return NIL;
 				/* tcp_unix should have prevented this */
-  if (sock >= FD_SETSIZE) fatal ("unselectable socket in ssl_getdata()");
   (*bn) (BLOCK_TCPREAD,NIL);
   while (stream->ictr < 1) {	/* if nothing in the buffer */
     time_t tl = time (0);	/* start of request */
@@ -490,15 +488,12 @@ long ssl_getdata (SSLSTREAM *stream)
     if (SSL_pending (stream->con)) i = 1;
     else {
       if (tcpdebug) mm_log ("Reading SSL data",TCPDEBUG);
-      tmo.tv_usec = 0;
-      FD_ZERO (&fds);		/* initialize selection vector */
-      FD_ZERO (&efds);		/* handle errors too */
-      FD_SET (sock,&fds);	/* set bit in selection vector */
-      FD_SET (sock,&efds);	/* set bit in error selection vector */
+      pfd.fd = sock;
+      pfd.events = POLLIN;
       errno = NIL;		/* block and read */
       do {			/* block under timeout */
-	tmo.tv_sec = ti ? ti - now : 0;
-	i = select (sock+1,&fds,0,&efds,ti ? &tmo : 0);
+	tmo = ti ? ti - now : 0;
+	i = poll (&pfd, 1, ti ? tmo * 1000 : -1);
 	now = time (0);		/* fake timeout if interrupt & time expired */
 	if ((i < 0) && (errno == EINTR) && ti && (ti <= now)) i = 0;
       } while ((i < 0) && (errno == EINTR));
