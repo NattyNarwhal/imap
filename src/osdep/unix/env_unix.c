@@ -77,7 +77,7 @@ static char *sslCApath = NIL;	/* non-standard CA path */
 static short anonymous = NIL;	/* is anonymous */
 static short blackBox = NIL;	/* is a black box */
 static short closedBox = NIL;	/* is a closed box (uses chroot() jail) */
-static short restrictBox = NIL;	/* is a restricted box */
+static short restrictBox = -1;	/* is a restricted box */
 static short has_no_life = NIL;	/* is a cretin with no life */
 				/* block environment init */
 static short block_env_init = NIL;
