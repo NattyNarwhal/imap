@@ -353,6 +353,8 @@
 #define SET_SCANCONTENTS (long) 573
 #define GET_MHALLOWINBOX (long) 574
 #define SET_MHALLOWINBOX (long) 575
+#define GET_ANNOTATION (long) 576
+#define SET_ANNOTATION (long) 577
 
 /* Driver flags */
 
@@ -1048,6 +1050,24 @@ ACLLIST {
   ACLLIST *next;
 };
 
+/* ANNOTATION Response */
+
+#define ANNOTATION_VALUES struct annotation_value_list
+
+ANNOTATION_VALUES {
+	char *attr;
+	char *value;
+	ANNOTATION_VALUES *next;
+};
+
+#define ANNOTATION struct annotation
+
+ANNOTATION {
+	char *mbox;
+	char *entry;
+	ANNOTATION_VALUES * values;
+};
+
 /* Quota resource list */
 
 #define QUOTALIST struct quota_list
@@ -1356,6 +1376,7 @@ typedef void (*sslfailure_t) (char *host,char *reason,unsigned long flags);
 typedef void (*logouthook_t) (void *data);
 typedef char *(*sslclientcert_t) (void);
 typedef char *(*sslclientkey_t) (void);
+typedef void (*getannotation_t) (MAILSTREAM *stream,ANNOTATION* annot);
 
 /* Globals */
 
@@ -1774,7 +1795,10 @@ SEARCHPGMLIST *mail_newsearchpgmlist (void);
 SORTPGM *mail_newsortpgm (void);
 THREADNODE *mail_newthreadnode (SORTCACHE *sc);
 ACLLIST *mail_newacllist (void);
+ANNOTATION* mail_newannotation(void);
+ANNOTATION_VALUES* mail_newannotationvalue(void);
 QUOTALIST *mail_newquotalist (void);
+void mail_free_annotation(ANNOTATION **a);
 void mail_free_body (BODY **body);
 void mail_free_body_data (BODY *body);
 void mail_free_body_parameter (PARAMETER **parameter);

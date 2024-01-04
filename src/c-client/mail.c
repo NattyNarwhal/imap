@@ -67,6 +67,7 @@ static sendcommand_t mailsendcommand = NIL;
 static newsrcquery_t mailnewsrcquery = NIL;
 				/* ACL results callback */
 static getacl_t mailaclresults = NIL;
+static getannotation_t mailannotationresults = NIL;
 				/* list rights results callback */
 static listrights_t maillistrightsresults = NIL;
 				/* my rights results callback */
@@ -596,6 +597,11 @@ void *mail_parameters (MAILSTREAM *stream,long function,void *value)
     ret = (void *) (debugsensitive ? VOIDT : NIL);
     break;
 
+  case SET_ANNOTATION:
+    mailannotationresults = (getannotation_t) value;
+  case GET_ANNOTATION:
+    ret = (void *) mailannotationresults;
+    break;
   case SET_ACL:
     mailaclresults = (getacl_t) value;
   case GET_ACL:
@@ -5717,7 +5723,15 @@ ACLLIST *mail_newacllist (void)
   return (ACLLIST *) memset (fs_get (sizeof (ACLLIST)),0,sizeof (ACLLIST));
 }
 
+ANNOTATION *mail_newannotation (void)
+{
+  return (ANNOTATION *) memset (fs_get (sizeof (ANNOTATION)),0,sizeof(ANNOTATION));
+}
 
+ANNOTATION_VALUES *mail_newannotationvalue (void)
+{
+  return (ANNOTATION_VALUES *) memset (fs_get (sizeof (ANNOTATION_VALUES)),0,sizeof(ANNOTATION_VALUES));
+}
 /* Mail instantiate new quotalist
  * Returns: new quotalist
  */
@@ -6040,6 +6054,25 @@ void mail_free_acllist (ACLLIST **al)
   }
 }
 
+static void mail_free_annotation_values(ANNOTATION_VALUES **val)
+{
+  if (*val) {
+    if ((*val)->attr) fs_give ((void**) &(*val)->attr);
+    if ((*val)->value) fs_give ((void**) &(*val)->value);
+    mail_free_annotation_values (&(*val)->next);
+    fs_give ((void **) val);
+  }
+}				
+void mail_free_annotation(ANNOTATION **al)
+{
+  if (*al) {
+    if((*al)->mbox) fs_give ((void**) &(*al)->mbox);
+    if((*al)->entry) fs_give ((void**) &(*al)->entry);
+    if((*al)->values)
+      mail_free_annotation_values(&(*al)->values);
+    fs_give ((void **) al);
+  }
+}
 
 /* Mail garbage collect quotalist
  * Accepts: pointer to quotalist pointer

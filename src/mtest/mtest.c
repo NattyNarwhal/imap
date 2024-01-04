@@ -145,6 +145,8 @@ int main ()
 #endif
   return NIL;
 }
+
+void mm_annotation (MAILSTREAM *stream, ANNOTATION *a);
 
 /* MM command loop
  * Accepts: MAIL stream
@@ -194,6 +196,28 @@ void mm (MAILSTREAM *stream,long debug)
       if (last && (last <= stream->nmsgs))
 	mail_setflag (stream,arg,"\\DELETED");
       else puts ("?Bad message number");
+      break;
+    case 'A':
+      {
+        char parms[MAILTMPLEN];
+        prompt("Annotation: ",parms);
+        if (parms) {
+          mail_parameters(stream,SET_ANNOTATION,mm_annotation);
+          STRINGLIST *entries = mail_newstringlist();
+          STRINGLIST *cur = entries;
+          cur->text.size = strlen((char *) (cur->text.data = (unsigned char*)cpystr (parms)));
+          cur->next = NIL;
+
+          STRINGLIST *attributes = mail_newstringlist();
+          cur = attributes;
+          cur->text.size = strlen((char *) (cur->text.data = (unsigned char*)cpystr ("*")));
+          cur->next = NIL;
+
+          imap_getannotation(stream,"INBOX",entries,attributes);
+          mail_free_stringlist(&entries);
+          mail_free_stringlist(&attributes);
+        }
+      }
       break;
     case 'E':			/* Expunge command */
       mail_expunge (stream);
@@ -347,7 +371,7 @@ void mm (MAILSTREAM *stream,long debug)
     case '?':			/* ? command */
       puts ("Body, Check, Delete, Expunge, Find, GC, Headers, Literal,");
       puts (" MailboxStatus, New Mailbox, Overview, Ping, Quit, Send, Type,");
-      puts ("Undelete, Xit, +, -, or <RETURN> for next message");
+      puts ("Undelete, Xit,Annotation, +, -, or <RETURN> for next message");
       break;
     default:			/* bogus command */
       printf ("?Unrecognized command: %s\n",cmd);
@@ -599,6 +623,18 @@ void prompt (char *msg,char *txt)
 }
 
 /* Interfaces to C-client */
+
+void mm_annotation (MAILSTREAM *stream, ANNOTATION *a)
+{
+  if(a){
+    fprintf(stderr,"mailbox: %s\nentry: %s\n",a->mbox,a->entry);
+    ANNOTATION_VALUES * v = a->values;
+    while(v){
+      fprintf(stderr,"attr: %s, value: %s\n",v->attr,v->value);
+      v = v->next;
+    }
+  }
+}
 
 
 void mm_searched (MAILSTREAM *stream,unsigned long number)

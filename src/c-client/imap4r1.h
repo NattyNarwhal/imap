@@ -279,3 +279,5 @@ long imap_myrights (MAILSTREAM *stream,char *mailbox);
 long imap_setquota (MAILSTREAM *stream,char *qroot,STRINGLIST *limits);
 long imap_getquota (MAILSTREAM *stream,char *qroot);
 long imap_getquotaroot (MAILSTREAM *stream,char *mailbox);
+long imap_getannotation (MAILSTREAM *stream,char *mailbox,STRINGLIST *entries,STRINGLIST *attributes);
+long imap_setannotation (MAILSTREAM *stream,ANNOTATION *annotation);

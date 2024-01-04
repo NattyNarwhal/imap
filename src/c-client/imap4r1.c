@@ -133,7 +133,8 @@ typedef struct imap_argument {
 #define MULTIAPPEND 13
 #define SNLIST 14
 #define MULTIAPPENDREDO 15
-
+#define QLIST 16
+#define QSTRING 17
 
 /* Append data */
 
@@ -203,12 +204,15 @@ void imap_gc (MAILSTREAM *stream,long gcflags);
 void imap_gc_body (BODY *body);
 void imap_capability (MAILSTREAM *stream);
 long imap_acl_work (MAILSTREAM *stream,char *command,IMAPARG *args[]);
+long imap_annotation_work (MAILSTREAM *stream,char *command,IMAPARG *args[]);
 
 IMAPPARSEDREPLY *imap_send (MAILSTREAM *stream,char *cmd,IMAPARG *args[]);
 IMAPPARSEDREPLY *imap_sout (MAILSTREAM *stream,char *tag,char *base,char **s);
 long imap_soutr (MAILSTREAM *stream,char *string);
 IMAPPARSEDREPLY *imap_send_astring (MAILSTREAM *stream,char *tag,char **s,
 				    SIZEDTEXT *as,long wildok,char *limit);
+IMAPPARSEDREPLY *imap_send_qstring (MAILSTREAM *stream,char *tag,char **s,
+				    SIZEDTEXT *as,char *limit);
 IMAPPARSEDREPLY *imap_send_literal (MAILSTREAM *stream,char *tag,char **s,
 				    STRING *st);
 IMAPPARSEDREPLY *imap_send_spgm (MAILSTREAM *stream,char *tag,char *base,
@@ -2763,6 +2767,84 @@ long imap_getacl (MAILSTREAM *stream,char *mailbox)
     args[0] = &ambx; args[1] = NIL;
   return imap_acl_work (stream,"GETACL",args);
 }
+
+/* IMAP set annotation
+ * Accepts: mail stream
+ *          annotation struct
+ * Returns: T on success, NIL on failure
+ */
+
+long imap_setannotation (MAILSTREAM *stream,ANNOTATION *annotation)
+{
+  IMAPARG *args[4],ambx,apth,aval;
+  long ret;
+
+  ambx.type = ASTRING;
+  ambx.text = (void *) annotation->mbox;
+  args[0] = &ambx;
+
+  apth.type = QSTRING;
+  apth.text = (void *) annotation->entry;
+  args[1] = &apth;
+
+  STRINGLIST *st,*l;
+  ANNOTATION_VALUES *v;
+
+  l = st = mail_newstringlist();
+  v = annotation->values;
+  while(v){
+    l->text.size = strlen((char *) (l->text.data = (unsigned char*)cpystr(v->attr)));
+    l->next = mail_newstringlist();
+    l = l->next;
+    l->text.size = strlen((char *) (l->text.data = (unsigned char*)cpystr(v->value)));
+    if(v->next){
+      l->next = mail_newstringlist();
+      l = l->next;
+    }
+    v = v->next;
+  }
+
+  aval.type = QLIST;
+  aval.text = (void *)st;
+  args[2] = &aval;
+  args[3] = NIL;
+
+  ret = imap_annotation_work(stream, "SETANNOTATION",args);
+  mail_free_stringlist(&st);
+  return ret;
+}
+
+
+
+/* IMAP get annotation
+ * Accepts: mail stream
+ *          mailbox name
+ *          annotation entry list
+ *          annotation attribute list
+ * Returns: T on success with data returned via callback, NIL on failure
+ */
+
+long imap_getannotation (MAILSTREAM *stream,char *mailbox,STRINGLIST *entries, STRINGLIST *attributes)
+{
+  IMAPARG *args[4],ambx,apth,aattr;
+  long ret;
+  ambx.type = ASTRING;
+  ambx.text = (void*) mailbox;
+  args[0] = &ambx;
+
+
+  apth.type = QLIST;
+  apth.text = (void*) entries;
+  args[1] = &apth;
+
+  aattr.type = QLIST;
+  aattr.text = (void*) attributes;
+  args[2] = &aattr;
+
+  args[3] = NIL;
+  ret = imap_annotation_work(stream, "GETANNOTATION",args);
+  return ret;
+}
 
 /* IMAP list rights
  * Accepts: mail stream
@@ -2815,6 +2897,16 @@ long imap_acl_work (MAILSTREAM *stream,char *command,IMAPARG *args[])
   else mm_log ("ACL not available on this IMAP server",ERROR);
   return ret;
 }
+ long imap_annotation_work(MAILSTREAM *stream, char *command,IMAPARG *args[])
+{
+  long ret = NIL;
+  IMAPPARSEDREPLY *reply;
+  if (imap_OK (stream,reply = imap_send (stream,command,args)))
+    ret = LONGT;
+  else mm_log (reply->text,ERROR);
+  return ret;
+}
+
 
 /* IMAP set quota
  * Accepts: mail stream
@@ -2947,6 +3039,11 @@ IMAPPARSEDREPLY *imap_send (MAILSTREAM *stream,char *cmd,IMAPARG *args[])
       if (reply = imap_send_astring (stream,tag,&s,&st,NIL,CMDBASE+MAXCOMMAND))
 	return reply;
       break;
+    case QSTRING:		/* atom or string, must be literal? */
+      st.size = strlen ((char *) (st.data = (unsigned char *) arg->text));
+      if (reply = imap_send_qstring (stream,tag,&s,&st,CMDBASE+MAXCOMMAND))
+	return reply;
+      break;
     case LITERAL:		/* literal, as a stringstruct */
       if (reply = imap_send_literal (stream,tag,&s,arg->text)) return reply;
       break;
@@ -2957,6 +3054,18 @@ IMAPPARSEDREPLY *imap_send (MAILSTREAM *stream,char *cmd,IMAPARG *args[])
       do {			/* for each list item */
 	*s++ = c;		/* write prefix character */
 	if (reply = imap_send_astring (stream,tag,&s,&list->text,NIL,
+				       CMDBASE+MAXCOMMAND)) return reply;
+	c = ' ';		/* prefix character for subsequent strings */
+      }
+      while (list = list->next);
+      *s++ = ')';		/* close list */
+      break;
+    case QLIST:			/* list of strings */
+      list = (STRINGLIST *) arg->text;
+      c = '(';			/* open paren */
+      do {			/* for each list item */
+	*s++ = c;		/* write prefix character */
+	if (reply = imap_send_qstring (stream,tag,&s,&list->text,
 				       CMDBASE+MAXCOMMAND)) return reply;
 	c = ' ';		/* prefix character for subsequent strings */
       }
@@ -3129,6 +3238,32 @@ IMAPPARSEDREPLY *imap_send (MAILSTREAM *stream,char *cmd,IMAPARG *args[])
   reply = imap_sout (stream,tag,CMDBASE,&s);
   mail_unlock (stream);		/* unlock stream */
   return reply;
+}
+
+/* IMAP send quoted-string
+ * Accepts: MAIL stream
+ *	    reply tag
+ *	    pointer to current position pointer of output bigbuf
+ *	    atom-string to output
+ *	    maximum to write as atom or qstring
+ * Returns: error reply or NIL if success
+ */
+
+IMAPPARSEDREPLY *imap_send_qstring (MAILSTREAM *stream,char *tag,char **s,
+				    SIZEDTEXT *as,char *limit)
+{
+  unsigned long j;
+  char c;
+  STRING st;
+				/* in case needed */
+  INIT (&st,mail_string,(void *) as->data,as->size);
+				/* always write literal if no space */
+  if ((*s + as->size) > limit) return imap_send_literal (stream,tag,s,&st);
+
+  *(*s)++ = '"';	/* write open quote */
+  for (j = 0; j < as->size; j++) *(*s)++ = as->data[j];
+  *(*s)++ = '"';	/* write close quote */
+  return NIL;
 }
 
 /* IMAP send atom-string
@@ -4059,6 +4194,50 @@ void imap_parse_unsolicited (MAILSTREAM *stream,IMAPPARSEDREPLY *reply)
     }
   }
 
+  else if (!strcmp (reply->key,"ANNOTATION") && (s = reply->text)){
+    char * mbox;
+    /* response looks like ANNOTATION "mailbox" "entry" ("attr" "value" ["attr" "value"]) ["entry" ("attr "value" ["attr" "value"] )]*/
+    getannotation_t an = (getannotation_t) mail_parameters (NIL,GET_ANNOTATION,NIL);
+
+    mbox = imap_parse_astring (stream, &s, reply,NIL);
+
+    while(*s){
+      ANNOTATION * al = mail_newannotation();
+      al->mbox = cpystr(mbox);
+      t = imap_parse_astring (stream, &s, reply,NIL);
+      al->entry = t;
+      STRINGLIST *strlist;
+      if (s){while (*s == ' ')s++;}
+
+      strlist = imap_parse_stringlist(stream, &s,reply);
+
+      ANNOTATION_VALUES *vlIter, *vlBegin;
+      vlIter = vlBegin = NIL;
+      if (strlist) {
+        while(strlist){	
+          if(vlIter){
+            vlIter->next = mail_newannotationvalue();
+            vlIter = vlIter->next;
+          }else{
+            vlIter = mail_newannotationvalue();
+            vlBegin = vlIter;
+          }
+          if ( strlist->text.size )
+            vlIter->attr = cpystr (strlist->text.data);
+          strlist = strlist->next;
+          if(!strlist) continue;
+          if ( strlist->text.size )
+            vlIter->value = cpystr (strlist->text.data);
+          strlist = strlist->next;
+        }
+      }
+      al->values = vlBegin;
+      if (an)
+        (*an) (stream,al);
+      mail_free_annotation(&al);
+    }
+    fs_give ((void **)&mbox);
+  }
   else if (!strcmp (reply->key,"ACL") && (s = reply->text) &&
 	   (t = imap_parse_astring (stream,&s,reply,NIL))) {
     getacl_t ar = (getacl_t) mail_parameters (NIL,GET_ACL,NIL);
