@@ -79,11 +79,13 @@
 # hxd	HP-UX 10.x with DCE security (see shp)
 # isc	Interactive Systems
 # ldb	Debian Linux
+# ldbs	Debian Linux (Shared c-client lib)
 # lfd	Fedora Core 4
 # ln8	Linux for Nokia N800
 # lnx	Linux with traditional passwords and crypt() in the C library
 #	 (see lnp, sl4, sl5, and slx)
 # lnp	Linux with Pluggable Authentication Modules (PAM)
+# lnps	Linux with Pluggable Authentication Modules (PAM, shared c-client lib)
 # lmd	Mandrake Linux
 # lr5	RedHat Enterprise 5 and later (same as lfd)
 # lrh	RedHat Linux 7.2 and later
@@ -307,7 +309,7 @@ SPECIALS:
 
 # Note on SCO you may have to set LN to "ln".
 
-a32 a41 a52 aix bs3 bsi d-g d54 do4 drs epx ga4 gas gh9 ghp ghs go5 gsc gsg gso gul h11 hpp hpx lnp lyn mct mnt nec nto nxt nx3 osf os4 ptx qnx sc5 sco sgi sg6 shp sl4 sl5 slx snx soc sol sos uw2: an
+a32 a41 a52 aix bs3 bsi d-g d54 do4 drs epx ga4 gas gh9 ghp ghs go5 gsc gsg gso gul h11 hpp hpx lnp lnps lyn mct mnt nec nto nxt nx3 osf os4 ptx qnx sc5 sco sgi sg6 shp sl4 sl5 slx snx soc sol sos uw2: an
 	$(BUILD) BUILDTYPE=$@
 
 # If you use sv4, you may find that it works to move it to use the an process.
@@ -371,6 +373,10 @@ lr5:	an
 	$(TOUCH) ip6
 	$(BUILD) BUILDTYPE=lnp IP=$(IP6) \
 	SPECIALS="SSLINCLUDE=/usr/include/openssl SSLLIB=/usr/lib SSLCERTS=/etc/pki/tls/certs SSLKEYS=/etc/pki/tls/private GSSDIR=/usr/kerberos"
+
+ldbs:	an
+	$(BUILD) BUILDTYPE=lnps IP=$(IP6) \
+	SPECIALS="GSSDIR=/usr SSLDIR=/usr SSLINCLUDE=/usr/include/openssl SSLCERTS=/etc/ssl/certs SSLKEYS=/etc/ssl/private"
 
 lmd:	an
 	$(BUILD) BUILDTYPE=lnp IP=$(IP6) \

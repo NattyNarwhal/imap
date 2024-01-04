@@ -26,7 +26,7 @@
 
 
 C = ../c-client
-CCLIENTLIB = $C/c-client.a
+CCLIENTLIB = $C/`cat $C/ARCHIVENAME`
 SHELL = /bin/sh
 
 # Get local definitions from c-client directory
@@ -37,13 +37,10 @@ LDFLAGS = $(CCLIENTLIB) `cat $C/LDFLAGS`
 
 all:	mtest
 
-mtest: $(CCLIENTLIB) mtest.o
+mtest: mtest.o
 	$(CC) $(CFLAGS) -o mtest mtest.o $(LDFLAGS)
 
 mtest.o: $C/mail.h $C/misc.h $C/osdep.h $C/rfc822.h $C/smtp.h $C/nntp.h
-
-$(CCLIENTLIB):
-	cd $C;make
 
 clean:
 	rm -f *.o mtest || true

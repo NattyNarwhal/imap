@@ -43,12 +43,12 @@ SHELL= /bin/sh
 # Get local definitions from c-client directory
 
 C = ../c-client
-CCLIENTLIB = $C/c-client.a
+CCLIENTLIB = $C/`cat $C/ARCHIVENAME`
 CC = `cat $C/CCTYPE`
 CFLAGS = -I$C `cat $C/CFLAGS` $(NSBD) $(ENBD) -DANOFILE=\"$(ANO)\" \
 	-DALERTFILE=\"$(ALERT)\" -DNNTPFILE=\"$(NNTP)\" \
 	-DUSERALERTFILE=\"$(USERALERT)\" -DSHUTDOWNFILE=\"$(SHUTDOWN)\"
-LDFLAGS = $(CCLIENTLIB) `cat $C/LDFLAGS`
+LDFLAGS = `cat $C/LDFLAGS`
 
 all:	imapd
 

@@ -498,7 +498,20 @@ lnp:	# Linux Pluggable Authentication modules
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
 	 BASECFLAGS="$(GCCCFLAGS)" \
-	 BASELDFLAGS="$(PAMLDFLAGS)"
+	 BASELDFLAGS="../c-client/c-client.a $(PAMLDFLAGS)"
+
+lnps:	# Linux Pluggable Authentication modules (c-client as shared lib)
+	$(BUILD) `$(CAT) SPECIALS` OS=lnx \
+	 SIGTYPE=psx CHECKPW=pam CRXTYPE=nfs \
+	 SPOOLDIR=/var/spool \
+	 ACTIVEFILE=/var/lib/news/active \
+	 RSHPATH=/usr/bin/rsh \
+	 BASECFLAGS="-fPIC $(GCCCFLAGS)" \
+	 ARCHIVE="libc-client.so" \
+	 BASELDFLAGS="-L../c-client -lc-client $(PAMLDFLAGS) -lc" \
+	 ARRC="$(CC) --shared -Wl,-soname,libc-client.so.$(VERSION) -o" \
+	 LIBRARIES="$(PAMLDFLAGS) $(EXTRALDFLAGS) $(SSLLDFLAGS) -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err" \
+	 RANLIB=true
 
 lnx:	# Linux non-shadow passwords
 	@echo You are building for traditional Linux *without* shadow
@@ -869,7 +882,7 @@ $(ARCHIVE): $(BINARIES)
 # Cleanup
 
 clean:
-	sh -c '$(RM) auths.c crexcl.c ip_unix.c linkage.[ch] siglocal.c osdep*.[ch] *.o ARCHIVE *FLAGS *TYPE $(ARCHIVE) || true'
+	sh -c '$(RM) auths.c crexcl.c ip_unix.c linkage.[ch] siglocal.c osdep*.[ch] *.o ARCHIVE ARCHIVENAME *FLAGS *TYPE $(ARCHIVE) || true'
 
 
 # Dependencies
@@ -976,7 +989,8 @@ onceenv:
 	 -DLOCKPGM1=\"$(LOCKPGM1)\" -DLOCKPGM2=\"$(LOCKPGM2)\" \
 	 -DLOCKPGM3=\"$(LOCKPGM3)\" > OSCFLAGS
 	echo $(BASELDFLAGS) $(EXTRALDFLAGS) > LDFLAGS
-	echo "$(ARRC) $(ARCHIVE) $(BINARIES);$(RANLIB) $(ARCHIVE)" > ARCHIVE
+	echo "$(ARRC) $(ARCHIVE) $(BINARIES) $(LIBRARIES);$(RANLIB) $(ARCHIVE)" > ARCHIVE
+	echo $(ARCHIVE) > ARCHIVENAME
 	echo $(OS) > OSTYPE
 	./drivers $(EXTRADRIVERS) $(DEFAULTDRIVERS) dummy
 	./mkauths $(EXTRAAUTHENTICATORS) $(DEFAULTAUTHENTICATORS)

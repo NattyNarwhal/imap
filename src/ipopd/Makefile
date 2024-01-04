@@ -26,14 +26,14 @@
 
 
 C = ../c-client
-CCLIENTLIB = $C/c-client.a
+CCLIENTLIB = $C/`cat $C/ARCHIVENAME`
 SHELL = /bin/sh
 
 # Get local definitions from c-client directory
 
 CC = `cat $C/CCTYPE`
 CFLAGS = -I$C `cat $C/CFLAGS`
-LDFLAGS = $(CCLIENTLIB) `cat $C/LDFLAGS`
+LDFLAGS = `cat $C/LDFLAGS`
 
 ipopd: ipop2d ipop3d
 
