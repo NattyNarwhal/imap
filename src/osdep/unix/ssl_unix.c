@@ -266,6 +266,14 @@ static char *ssl_start_work (SSLSTREAM *stream,char *host,unsigned long flags)
 				/* create connection */
   if (!(stream->con = (SSL *) SSL_new (stream->context)))
     return "SSL connection failed";
+#if OPENSSL_VERSION_NUMBER >= 0x10101000
+  /* Use SNI in case server requires it with TLSv1.3.
+   * Literal IP addresses not permitted per RFC 6066. */
+  if (!a2i_IPADDRESS(host)) {
+    ERR_clear_error();
+    SSL_set_tlsext_host_name(stream->con,host);
+  }
+#endif
   bio = BIO_new_socket (stream->tcpstream->tcpsi,BIO_NOCLOSE);
   SSL_set_bio (stream->con,bio,bio);
   SSL_set_connect_state (stream->con);
