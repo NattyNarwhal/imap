@@ -348,12 +348,12 @@ TCPSTREAM *tcp_aopen (NETMBX *mb,char *service,char *usrbuf)
 				/* return immediately if ssh disabled */
     if (!(sshpath && (ti = sshtimeout))) return NIL;
 				/* ssh command prototype defined yet? */
-    if (!sshcommand) sshcommand = cpystr ("%s %s -l %s exec /etc/r%sd");
+    if (!sshcommand) sshcommand = cpystr ("%s %s -l %s exec /usr/sbin/r%sd");
   }
 				/* want rsh? */
   else if (rshpath && (ti = rshtimeout)) {
 				/* rsh command prototype defined yet? */
-    if (!rshcommand) rshcommand = cpystr ("%s %s -l %s exec /etc/r%sd");
+    if (!rshcommand) rshcommand = cpystr ("%s %s -l %s exec /usr/sbin/r%sd");
   }
   else return NIL;		/* rsh disabled */
 				/* look like domain literal? */
