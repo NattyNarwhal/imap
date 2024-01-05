@@ -25,7 +25,4 @@ extern AUTHENTICATOR auth_ext;
 extern AUTHENTICATOR auth_md5;
 extern AUTHENTICATOR auth_pla;
 extern AUTHENTICATOR auth_log;
-#ifdef HAVE_KERBEROS
-extern AUTHENTICATOR auth_gss;
-#endif
 #endif
