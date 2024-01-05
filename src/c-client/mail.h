@@ -26,7 +26,7 @@
 
 /* The Version */
 
-#define CCLIENTVERSION "2007f"
+#define CCLIENTVERSION "2024.1"
 
 /* Build parameters */
 
