@@ -1,11 +1,3 @@
-/* 
- * Note that PHP at least scans linkage.h for if GSS support is here.
- * Because of this, put a specific one in place of this file on install.
- */
-
-#ifdef HAVE_KERBEROS
-#include "linkage_gss.h"
-#else
 extern DRIVER mboxdriver;
 extern DRIVER imapdriver;
 extern DRIVER nntpdriver;
@@ -25,7 +17,4 @@ extern AUTHENTICATOR auth_ext;
 extern AUTHENTICATOR auth_md5;
 extern AUTHENTICATOR auth_pla;
 extern AUTHENTICATOR auth_log;
-#ifdef HAVE_KERBEROS
 extern AUTHENTICATOR auth_gss;
-#endif
-#endif

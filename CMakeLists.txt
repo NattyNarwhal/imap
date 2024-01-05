@@ -31,9 +31,8 @@ if(WIN32)
 else() # Unix
 	# Missing on AIX somehow
 	check_function_exists(flock HAVE_FLOCK_FUNCTION)
-	if(HAVE_FLOCK_FUNCTION)
-		add_definitions(-DHAVE_FLOCK_FUNCTION)
-	else()
+	if(NOT HAVE_FLOCK_FUNCTION)
+		add_definitions(-DNEED_FLOCKSIM)
 		target_sources(c-client PRIVATE src/osdep/unix/flocksim.c)
 	endif()
 	# In turn, this file is required by flocksim.c, but doesn't exist everywhere
@@ -70,13 +69,30 @@ else() # Unix
 
 	# System V vs. BSD timezone support (check is not ideal)
 	if(AIX)
-		target_sources(c-client PRIVATE src/osdep/unix/tz_sv4)
+		target_sources(c-client PRIVATE src/osdep/unix/tz_sv4.c)
 	else()
 		target_sources(c-client PRIVATE	src/osdep/unix/tz_bsd.c)
 	endif()
 
-	# XXX: Kerberos
-	# old Makefile.gss bits: -lgssapi_krb5 -lkrb5 -lcrypto -lcom_err, -DGSS_C_NT_HOSTBASED_SERVICE=gss_nt_service_name -DKRB5_DEPRECATED=1
+	# Kerberos: Only MIT flavour is known to be supported.
+	# old Makefile.gss bits: -lgssapi_krb5 -lkrb5 -lcrypto -lcom_err
+	check_include_file(gssapi/gssapi_krb5.h HAVE_KRB5_H)
+	if(HAVE_KRB5_H)
+		set(INSTALL_KERBEROS_LINKAGE_H TRUE)
+		# this will make auths.c include the needed files,
+		# the defs after HAVE_KERBEROS are from the old build system
+		add_definitions(-DHAVE_KERBEROS -DGSS_C_NT_HOSTBASED_SERVICE=gss_nt_service_name -DKRB5_DEPRECATED=1)
+
+		# XXX: Consider linking against GSS.framework on Apple platforms
+		find_library(KRB5_LIB krb5)
+		if(KRB5_LIB)
+			target_link_libraries(c-client ${KRB5_LIB})
+		endif()
+		find_library(GSSAPI_KRB5_LIB gssapi_krb5)
+		if(GSSAPI_KRB5_LIB)
+			target_link_libraries(c-client ${GSSAPI_KRB5_LIB})
+		endif()
+	endif()
 
 	# SSL library
 	find_package(OpenSSL)
@@ -125,9 +141,15 @@ install(TARGETS c-client
 # XXX: Can we do it in the install above?
 file(GLOB HEADERS
 	src/c-client/*.h
-	src/glue/*.h
+	src/glue/osdep.h
 	# XXX: Platform specific AF
 	src/osdep/unix/env_unix.h
 	src/osdep/unix/tcp_unix.h
 )
 install(FILES ${HEADERS} DESTINATION include/c-client)
+# Workaround for PHP build system detecting Kerberos with a header grep
+if(INSTALL_KERBEROS_LINKAGE_H)
+	install(FILES src/glue/linkage_gss.h DESTINATION include/c-client RENAME linkage.h)
+else()
+	install(FILES src/glue/linkage.h DESTINATION include/c-client)
+endif()

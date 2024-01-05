@@ -19,5 +19,8 @@
   auth_link (&auth_md5);                /* link in the md5 authenticator */
   auth_link (&auth_pla);                /* link in the pla authenticator */
   auth_link (&auth_log);                /* link in the log authenticator */
+  #ifdef HAVE_KERBEROS
+  auth_link (&auth_gss);
+  #endif
   mail_versioncheck (CCLIENTVERSION);
 

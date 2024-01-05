@@ -42,6 +42,7 @@
 #include "nl.h"
 #include "tcp_unix.h"
 #include "tcp.h"
-#ifndef HAVE_FLOCK_FUNCTION
+/* Internal usage */
+#ifdef NEED_FLOCKSIM
 #include "flocksim.h"
 #endif
