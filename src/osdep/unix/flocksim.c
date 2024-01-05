@@ -25,6 +25,12 @@
  * Date:	10 April 2001
  * Last Edited:	11 October 2007
  */
+
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
  
 #undef flock			/* name is used as a struct for fcntl */
 
