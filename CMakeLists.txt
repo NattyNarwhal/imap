@@ -37,7 +37,7 @@ else() # Unix
 		target_sources(c-client PRIVATE src/osdep/unix/flocksim.c)
 	endif()
 	# In turn, this file is required by flocksim.c, but doesn't exist everywhere
-	check_include_file("sys/ustat.h" HAVE_USTAT_H)
+	check_include_file("ustat.h" HAVE_USTAT_H)
 	if(HAVE_USTAT_H)
 		add_definitions(-DHAVE_USTAT_H)
 	endif()

@@ -11,12 +11,12 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#ifdef HAVE_USTAT_H
-#include <sys/ustat.h>
-#endif
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef HAVE_USTAT_H
+#include <ustat.h>
+#endif
 /* for unix.c */
 #include <utime.h>
 
