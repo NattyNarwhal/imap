@@ -130,7 +130,7 @@ else() # Unix
 	else()
 		# XXX: not PAM but still has auth, if even relevant
 		target_sources(c-client PRIVATE src/osdep/unix/ckp_nul.c)
-		message(STATUS "Building with without support")
+		message(STATUS "Building without PAM support")
 	endif()
 
 	# Extremely gross: mm_* callbacks come from application, so don't link here
