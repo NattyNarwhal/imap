@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.16)
+include(CheckFunctionExists)
+
+if(CMAKE_SYSTEM_NAME STREQUAL AIX OR CMAKE_SYSTEM_NAME STREQUAL OS400) # OS400 = IBM i PASE
+	set(AIX TRUE)
+endif()
 
 project(c-client VERSION 2024.1 DESCRIPTION "Modern UW IMAP Library")
 
@@ -23,6 +28,14 @@ add_library(c-client SHARED
 if(WIN32)
 	# XXX: Add Windows support here
 else() # Unix
+	# Missing on AIX somehow
+	check_function_exists(flock HAVE_FLOCK_FUNCTION)
+	if(NOT HAVE_FLOCK_FUNCTION)
+		target_sources(c-client PRIVATE src/osdep/unix/flocksim.c)
+	else()
+		add_definitions(-DHAVE_FLOCK_FUNCTION)
+	endif()
+
 	target_sources(c-client PRIVATE
 		# drivers that it didn't include otherwise
 		src/osdep/unix/tenex.c
@@ -42,7 +55,6 @@ else() # Unix
 		src/osdep/unix/gr_waitp.c # either works but waitp is posix
 		src/osdep/unix/sig_psx.c # shouldn't be a problem in 2024, right?
 		src/osdep/unix/log_std.c # same, import from old tree if we need one
-		src/osdep/unix/tz_bsd.c # same
 		# unix proto
 		src/osdep/unix/unix.c
 		src/osdep/unix/pseudo.c
@@ -50,49 +62,47 @@ else() # Unix
 		src/osdep/unix/dummy.c
 	)
 
+	# System V vs. BSD timezone support (check is not ideal)
+	if(AIX)
+		target_sources(c-client PRIVATE src/osdep/unix/tz_sv4)
+	else()
+		target_sources(c-client PRIVATE	src/osdep/unix/tz_bsd.c)
+	endif()
+
 	# XXX: Kerberos
 	# old Makefile.gss bits: -lgssapi_krb5 -lkrb5 -lcrypto -lcom_err, -DGSS_C_NT_HOSTBASED_SERVICE=gss_nt_service_name -DKRB5_DEPRECATED=1
 
 	# SSL library
 	find_package(OpenSSL)
 	if (OPENSSL_FOUND)
-		target_link_libraries(c-client
-			OpenSSL::SSL
-		)
-		target_sources(c-client PRIVATE
-			src/osdep/unix/ssl_unix.c
-		)
+		target_link_libraries(c-client OpenSSL::SSL)
+		target_sources(c-client PRIVATE src/osdep/unix/ssl_unix.c)
 	else()
-		target_sources(c-client PRIVATE
-			src/osdep/unix/ssl_none.c
-		)
+		target_sources(c-client PRIVATE src/osdep/unix/ssl_none.c)
 	endif()
 
 	# Authentication library
 	find_library(PAM_LIB pam)
 	if (PAM_LIB)
-		target_sources(c-client PRIVATE
-			src/osdep/unix/ckp_pam.c
-		)
+		target_sources(c-client PRIVATE src/osdep/unix/ckp_pam.c)
 
-		target_link_libraries(c-client
-			${PAM_LIB}
-		)
+		target_link_libraries(c-client ${PAM_LIB})
 	else()
 		# XXX: not PAM but still has auth, if even relevant
-		target_sources(c-client PRIVATE
-			src/osdep/unix/ckp_nul.c
-		)
+		target_sources(c-client PRIVATE src/osdep/unix/ckp_nul.c)
 	endif()
 
-	# Extremely gross: mm_* callbacks
-	# XXX: Assumes ld64 or binutils
-	if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+	# Extremely gross: mm_* callbacks come from application, so don't link here
+	if(APPLE)
 		target_link_options(c-client PRIVATE "-Wl,-undefined,dynamic_lookup")
+	elseif(AIX)
+		target_link_options(c-client PRIVATE "-Wl,-brtl,-berok,-bnosymbolic-,-bM:SRE")
 	else()
 		target_link_options(c-client PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
 	endif()
 endif()
+
+#set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-error=pointer-sign -Wno-error=parentheses")
 
 set_target_properties(c-client PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(c-client PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})

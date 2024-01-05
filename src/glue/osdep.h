@@ -20,8 +20,8 @@
 /* To avoid having to redefine it everywhere */
 #define CHUNKSIZE 65536
 
-/* Mac specific */
-#ifdef __APPLE__
+/* Some things have void setpgrp (XXX: Move to CMake) */
+#if defined(_AIX) || defined(__APPLE__)
 #define setpgrp setpgid
 #endif
 
@@ -39,3 +39,6 @@
 #include "nl.h"
 #include "tcp_unix.h"
 #include "tcp.h"
+#ifndef HAVE_FLOCK_FUNCTION
+#include "flocksim.h"
+#endif
