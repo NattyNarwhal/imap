@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23G)
+cmake_minimum_required(VERSION 3.23)
 
 project(c-client VERSION 2024.1 DESCRIPTION "Modern UW IMAP Library")
 
