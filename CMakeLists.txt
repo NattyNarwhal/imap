@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 
+option(BUILD_MTEST "Builds the mtest program that uses c-client" FALSE)
+
 if(CMAKE_SYSTEM_NAME STREQUAL AIX OR CMAKE_SYSTEM_NAME STREQUAL OS400) # OS400 = IBM i PASE
 	set(AIX TRUE)
 endif()
@@ -151,3 +153,13 @@ file(GLOB HEADERS
 	src/osdep/unix/tcp_unix.h
 )
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
+
+# mtest program
+if(BUILD_MTEST)
+	add_executable(mtest src/mtest/mtest.c)
+	target_include_directories(mtest PRIVATE src/glue)
+	target_include_directories(mtest PRIVATE src/c-client)
+	target_include_directories(mtest PRIVATE src/charset)
+	target_include_directories(mtest PRIVATE src/osdep/unix)
+	target_link_libraries(mtest c-client)
+endif()
