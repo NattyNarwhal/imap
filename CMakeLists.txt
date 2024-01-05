@@ -146,10 +146,10 @@ file(GLOB HEADERS
 	src/osdep/unix/env_unix.h
 	src/osdep/unix/tcp_unix.h
 )
-install(FILES ${HEADERS} DESTINATION include/c-client)
+install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
 # Workaround for PHP build system detecting Kerberos with a header grep
 if(INSTALL_KERBEROS_LINKAGE_H)
-	install(FILES src/glue/linkage_gss.h DESTINATION include/c-client RENAME linkage.h)
+	install(FILES src/glue/linkage_gss.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client RENAME linkage.h)
 else()
-	install(FILES src/glue/linkage.h DESTINATION include/c-client)
+	install(FILES src/glue/linkage.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
 endif()
