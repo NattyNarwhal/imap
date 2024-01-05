@@ -9,7 +9,7 @@ In particular, it does:
 * Modern CMake build system.
   * Automatically detects OpenSSL.
   * Assumes modern platform support (i.e. IPv6).
-  * Builds cleanly on modern operating systems (i.e. macOS/arm64).
+  * Builds with no patching on modern operating systems (i.e. macOS/arm64).
 * Removed massively unmaintained tools and daemons
   * You should use something like Dovecot instead if you were using these.
 * Cleaned up OS support
@@ -22,3 +22,12 @@ The files in `docs/` are assumed to be stale regarding OS support.
 ## Building
 
 Use CMake.
+
+## TODO
+
+* Reintegrate Windows support
+* Make features optional (Kerberos, PAM, OpenSSL)
+* Cleanup
+  * Remove functionality only ever used by servers
+  * Run clang-format
+  * Clean up warnings, -Werror it
