@@ -78,7 +78,8 @@ else() # Unix
 	# old Makefile.gss bits: -lgssapi_krb5 -lkrb5 -lcrypto -lcom_err
 	check_include_file(gssapi/gssapi_krb5.h HAVE_KRB5_H)
 	if(HAVE_KRB5_H)
-		set(INSTALL_KERBEROS_LINKAGE_H TRUE)
+		# Workaround for PHP build system detecting Kerberos with a header grep
+		install(FILES src/glue/linkage_gss.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client RENAME linkage.h)
 		# this will make auths.c include the needed files,
 		# the defs after HAVE_KERBEROS are from the old build system
 		add_definitions(-DHAVE_KERBEROS -DGSS_C_NT_HOSTBASED_SERVICE=gss_nt_service_name -DKRB5_DEPRECATED=1)
@@ -92,6 +93,8 @@ else() # Unix
 		if(GSSAPI_KRB5_LIB)
 			target_link_libraries(c-client ${GSSAPI_KRB5_LIB})
 		endif()
+	else()
+		install(FILES src/glue/linkage.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
 	endif()
 
 	# SSL library
@@ -147,9 +150,3 @@ file(GLOB HEADERS
 	src/osdep/unix/tcp_unix.h
 )
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
-# Workaround for PHP build system detecting Kerberos with a header grep
-if(INSTALL_KERBEROS_LINKAGE_H)
-	install(FILES src/glue/linkage_gss.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client RENAME linkage.h)
-else()
-	install(FILES src/glue/linkage.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
-endif()
