@@ -47,6 +47,7 @@ else() # Unix
 		src/osdep/unix/phile.c
 		src/osdep/unix/mbx.c
 		src/osdep/unix/mh.c
+		src/osdep/unix/mix.c
 		src/osdep/unix/mmdf.c
 		src/osdep/unix/mtx.c
 		src/osdep/unix/mx.c
