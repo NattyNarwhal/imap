@@ -36,6 +36,7 @@ Use CMake. The following build flags are interesting:
 ## TODO
 
 * Reintegrate Windows support
+* pkg-config or CMake build files
 * Cleanup
   * Remove functionality only ever used by servers
   * Run clang-format
