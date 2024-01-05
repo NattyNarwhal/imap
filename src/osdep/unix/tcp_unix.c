@@ -26,7 +26,7 @@
  * Last Edited:	13 January 2008
  */
 
-#include "ip_unix.c"
+#include "ip6_unix.c"
 
 #undef write			/* don't use redefined write() */
  
@@ -41,7 +41,7 @@ static long sshtimeout = 15;	/* ssh timeout */
 static char *sshcommand = NIL;	/* ssh command */
 static char *sshpath = NIL;	/* ssh path */
 static long allowreversedns = T;/* allow reverse DNS lookup */
-static long tcpdebug = NIL;	/* extra TCP debugging telemetry */
+extern long tcpdebug = NIL;	/* extra TCP debugging telemetry */
 static char *myClientAddr = NIL;/* client IP address */
 static char *myClientHost = NIL;/* client DNS name */
 static long myClientPort = -1;	/* client port number */

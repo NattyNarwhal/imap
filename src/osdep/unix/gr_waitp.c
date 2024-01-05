@@ -32,6 +32,10 @@
  *	    status return value
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
 void grim_pid_reap_status (int pid,int killreq,void *status)
 {
   if (killreq) kill(pid,SIGHUP);/* kill if not already dead */

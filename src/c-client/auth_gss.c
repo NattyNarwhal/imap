@@ -26,6 +26,8 @@
  * Last Edited:	30 August 2006
  */
 
+#include <gssapi/gssapi_generic.h>
+#include <gssapi/gssapi_krb5.h>
 
 long auth_gssapi_valid (void);
 long auth_gssapi_client (authchallenge_t challenger,authrespond_t responder,

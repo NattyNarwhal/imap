@@ -25,6 +25,10 @@
  * Date:	1 August 1988
  * Last Edited:	30 August 2006
  */
+
+#include "mail.h"
+
+#include "osdep.h"
 
 /* Get a block of free storage
  * Accepts: size of desired block

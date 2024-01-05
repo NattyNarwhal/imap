@@ -24,6 +24,26 @@
  * Last Edited:	23 February 2009
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
+
+#define CREATEPROTO unixproto
+#define EMPTYPROTO unixproto
+
+// XXX: Awful, probably no longer used in library only mode
+#define LOCKPGM ""
+#define LOCKPGM1 ""
+#define LOCKPGM2 ""
+#define LOCKPGM3 ""
+#define MAILSPOOL "/var/spool"
+#define NEWSSPOOL "/var/spool/news"
+#define ACTIVEFILE "/var/lib/news/active"
+#define ANONYMOUSHOME "/var/spool/mail/anonymous"
+// XXX: Same
+
 #include <grp.h>
 #include <signal.h>
 #include <sys/wait.h>
@@ -63,7 +83,7 @@
 
 static char *myUserName = NIL;	/* user name */
 static char *myHomeDir = NIL;	/* home directory name */
-static char *myServerName = NIL;/* server name */
+extern char *myServerName = NIL;/* server name */
 static char *myLocalHost = NIL;	/* local host name */
 static char *myNewsrc = NIL;	/* newsrc file name */
 static char *mailsubdir = NIL;	/* mailbox subdirectory name */
@@ -111,7 +131,7 @@ static short allowuserconfig = NIL;
 static long disablePlaintext = NIL;
 static long list_max_level = 20;/* maximum level of list recursion */
 				/* facility for syslog */
-static int syslog_facility = LOG_MAIL;
+extern int syslog_facility = LOG_MAIL;
 
 /* Path of the privileged system lock program (mlock).  Normally set by
  * logic test.
@@ -252,7 +272,7 @@ static NAMESPACE nslimited = {"#shared/",'/',NIL,&nspublic};
 
 
 #include "write.c"		/* include safe writing routines */
-#include "crexcl.c"		/* include exclusive create */
+#include "crx_std.c"		/* include exclusive create */
 #include "pmatch.c"		/* include wildcard pattern matcher */
 
 /* Get all authenticators */

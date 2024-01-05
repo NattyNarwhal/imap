@@ -26,6 +26,10 @@
  * Last Edited:	30 August 2006
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
 
 /* Report a fatal error
  * Accepts: string to output

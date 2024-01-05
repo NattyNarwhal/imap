@@ -26,6 +26,12 @@
  * Last Edited:	30 August 2006
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
+
 
 /* Append local timezone name
  * Accepts: destination string

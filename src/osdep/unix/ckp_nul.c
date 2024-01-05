@@ -25,6 +25,12 @@
  * Date:	23 July 1998
  * Last Edited:	30 August 2006
  */
+
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
 
 /* Check password
  * Accepts: login passwd struct

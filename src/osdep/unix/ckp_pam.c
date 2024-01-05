@@ -26,6 +26,16 @@
  * Last Edited:	31 August 2006
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
+
+/* defined in env_unix.c */
+extern char *myServerName;
+extern int syslog_facility; 
+
 
 #ifdef MAC_OSX_KLUDGE		/* why can't Apple be compatible? */
 #include <pam/pam_appl.h>

@@ -26,6 +26,11 @@
  * Last Edited:	30 August 2006
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
 
 /*
  * There is some amazingly bad design in IPv6 sockets.

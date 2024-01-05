@@ -25,6 +25,10 @@
  * Date:	7 February 2001
  * Last Edited:	30 August 2006
  */
+
+#include "mail.h"
+
+#include "osdep.h"
 
 /* Init server for SSL
  * Accepts: server name

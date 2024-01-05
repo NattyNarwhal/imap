@@ -25,6 +25,12 @@
  * Date:	1 August 1988
  * Last Edited:	30 August 2006
  */
+
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
 
 /* Copy string with CRLF newlines
  * Accepts: destination string

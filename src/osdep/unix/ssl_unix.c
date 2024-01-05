@@ -11,6 +11,19 @@
  * ========================================================================
  */
 
+#include "mail.h"
+
+#include "osdep.h"
+
+#include "misc.h"
+
+// XXX: Fix hardcoded
+#define SSL_CERT_DIRECTORY "/usr/lib/ssl/certs"
+#define SSL_KEY_DIRECTORY "/usr/lib/ssl/certs"
+
+// This is defined in tcp_unix, but we aren't concatting stuff anymore.
+extern int tcpdebug;
+
 /*
  * Program:	SSL authentication/encryption module
  *
@@ -27,14 +40,14 @@
  */
 
 #define crypt ssl_private_crypt
-#include <x509v3.h>
-#include <ssl.h>
-#include <err.h>
-#include <pem.h>
-#include <buffer.h>
-#include <bio.h>
-#include <crypto.h>
-#include <rand.h>
+#include <openssl/x509v3.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/buffer.h>
+#include <openssl/bio.h>
+#include <openssl/crypto.h>
+#include <openssl/rand.h>
 #undef crypt
 
 #define SSLBUFLEN 8192

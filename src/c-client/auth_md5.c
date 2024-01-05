@@ -25,6 +25,8 @@
  * Date:	21 October 1998
  * Last Edited:	30 January 2007
  */
+
+#define MD5ENABLE "/etc/cram-md5.pwd"
 
 /* MD5 context */
 
