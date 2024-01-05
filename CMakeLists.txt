@@ -120,7 +120,7 @@ else() # Unix
 	elseif(AIX)
 		target_link_options(c-client PRIVATE "-Wl,-brtl,-berok,-bnosymbolic-,-bM:SRE")
 	else()
-		target_link_options(c-client PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+		target_link_options(c-client PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files")
 	endif()
 endif()
 
