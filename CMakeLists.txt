@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 include(CheckFunctionExists)
+include(CheckIncludeFile)
 
 if(CMAKE_SYSTEM_NAME STREQUAL AIX OR CMAKE_SYSTEM_NAME STREQUAL OS400) # OS400 = IBM i PASE
 	set(AIX TRUE)
@@ -30,10 +31,15 @@ if(WIN32)
 else() # Unix
 	# Missing on AIX somehow
 	check_function_exists(flock HAVE_FLOCK_FUNCTION)
-	if(NOT HAVE_FLOCK_FUNCTION)
-		target_sources(c-client PRIVATE src/osdep/unix/flocksim.c)
-	else()
+	if(HAVE_FLOCK_FUNCTION)
 		add_definitions(-DHAVE_FLOCK_FUNCTION)
+	else()
+		target_sources(c-client PRIVATE src/osdep/unix/flocksim.c)
+	endif()
+	# In turn, this file is required by flocksim.c, but doesn't exist everywhere
+	check_include_file("sys/ustat.h" HAVE_USTAT_H)
+	if(HAVE_USTAT_H)
+		add_definitions(-DHAVE_USTAT_H)
 	endif()
 
 	target_sources(c-client PRIVATE
