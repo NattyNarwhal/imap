@@ -177,3 +177,15 @@ if(BUILD_MTEST)
 	target_link_libraries(mtest c-client)
 	message(STATUS "Building mtest program")
 endif()
+
+# mlock program
+if(UNIX)
+	add_executable(mlock src/mlock/mlock.c)
+	set(LOCKPGM_PATH ${CMAKE_INSTALL_BINDIR}/mlock)
+	install(TARGETS mlock RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	message(STATUS "Building mlock program (needed for mailbox locking)")
+endif()
+
+# Currently only used for mlock, but generally useful anyways
+configure_file(src/glue/config.h.in src/glue/config.h)
+target_include_directories(c-client PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src/glue")

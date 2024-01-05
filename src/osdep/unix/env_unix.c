@@ -30,14 +30,13 @@
 
 #include "misc.h"
 
+/* for LOCKPGM */
+#include <config.h>
+
 #define CREATEPROTO unixproto
 #define EMPTYPROTO unixproto
 
 // XXX: Awful, probably no longer used in library only mode
-#define LOCKPGM ""
-#define LOCKPGM1 ""
-#define LOCKPGM2 ""
-#define LOCKPGM3 ""
 #define MAILSPOOL "/var/spool"
 #define NEWSSPOOL "/var/spool/news"
 #define ACTIVEFILE "/var/lib/news/active"
@@ -1213,9 +1212,7 @@ long dotlock_lock (char *file,DOTLOCK *base,int fd)
   case EACCES:			/* protection failure? */
     MM_CRITICAL (NIL);		/* go critical */
     if (closedBox || !lockpgm);	/* can't do on closed box or disabled */
-    else if ((*lockpgm && stat (lockpgm,&sb)) ||
-	     (!*lockpgm && stat (lockpgm = LOCKPGM1,&sb) &&
-	      stat (lockpgm = LOCKPGM2,&sb) && stat (lockpgm = LOCKPGM3,&sb)))
+    else if (*lockpgm && stat (lockpgm,&sb))
       lockpgm = NIL;		/* disable if can't find lockpgm */
     else if (pipe (pi) >= 0) {	/* make command pipes */
       long cf;

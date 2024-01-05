@@ -40,6 +40,8 @@
 #include <netdb.h>
 #include <ctype.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
 
 #define LOCKTIMEOUT 5		/* lock timeout in minutes */
 #define LOCKPROTECTION 0664
