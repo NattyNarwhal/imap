@@ -23,11 +23,6 @@
 /* To avoid having to redefine it everywhere */
 #define CHUNKSIZE 65536
 
-/* Some things have void setpgrp (XXX: Move to CMake) */
-#if defined(_AIX) || defined(__APPLE__)
-#define setpgrp setpgid
-#endif
-
 /* Awful workaround for dummy.c */
 #define direct dirent
 

@@ -1237,7 +1237,7 @@ long dotlock_lock (char *file,DOTLOCK *base,int fd)
 	    for (cf = max (20,max (max (pi[0],pi[1]),max(po[0],po[1])));
 		 cf >= 3; --cf) if (cf != fd) close (cf);
 				/* be our own process group */
-	    setpgrp (0,getpid ());
+	    setpgid (0,getpid ());
 				/* now run it */
 	    _exit (execv (argv[0],argv));
 	  }

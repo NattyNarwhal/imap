@@ -395,7 +395,7 @@ TCPSTREAM *tcp_aopen (NETMBX *mb,char *service,char *usrbuf)
       dup2 (pipeo[0],0);	/* parent's output is my input */
 				/* close all unnecessary descriptors */
       for (cf = 3; cf <= maxfd; cf++) close (cf);
-      setpgrp (0,getpid ());	/* be our own process group */
+      setpgid (0,getpid ());	/* be our own process group */
       _exit (execv (path,argv));/* now run it */
     }
     _exit (1);			/* child is done */
