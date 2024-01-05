@@ -3,6 +3,8 @@ include(CheckFunctionExists)
 include(CheckIncludeFile)
 
 option(BUILD_MTEST "Builds the mtest program that uses c-client" FALSE)
+option(USE_KERBEROS "Use GSS/Kerberos" TRUE)
+option(USE_OPENSSL "Use OpenSSL on Unix-likes" TRUE)
 
 if(CMAKE_SYSTEM_NAME STREQUAL AIX OR CMAKE_SYSTEM_NAME STREQUAL OS400) # OS400 = IBM i PASE
 	set(AIX TRUE)
@@ -80,7 +82,7 @@ else() # Unix
 	# Kerberos: Only MIT flavour is known to be supported.
 	# old Makefile.gss bits: -lgssapi_krb5 -lkrb5 -lcrypto -lcom_err
 	check_include_file(gssapi/gssapi_krb5.h HAVE_KRB5_H)
-	if(HAVE_KRB5_H)
+	if(USE_KERBEROS AND HAVE_KRB5_H)
 		# Workaround for PHP build system detecting Kerberos with a header grep
 		install(FILES src/glue/linkage_gss.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client RENAME linkage.h)
 		# this will make auths.c include the needed files,
@@ -96,17 +98,25 @@ else() # Unix
 		if(GSSAPI_KRB5_LIB)
 			target_link_libraries(c-client ${GSSAPI_KRB5_LIB})
 		endif()
+		message(STATUS "Building with Kerberos support")
+	elseif(USE_KERBERROS)
+		message(SEND_ERROR "Kerberos is enabled, but not found. Disable it to build without it.")
 	else()
 		install(FILES src/glue/linkage.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c-client)
+		message(STATUS "Building without Kerberos support")
 	endif()
 
 	# SSL library
 	find_package(OpenSSL)
-	if (OPENSSL_FOUND)
+	if (USE_OPENSSL AND OPENSSL_FOUND)
 		target_link_libraries(c-client OpenSSL::SSL)
 		target_sources(c-client PRIVATE src/osdep/unix/ssl_unix.c)
+		message(STATUS "Building with OpenSSL support")
+	elseif(USE_OPENSSL)
+		message(SEND_ERROR "OpenSSL is enabled, but not found. Disable it to build without it.")
 	else()
 		target_sources(c-client PRIVATE src/osdep/unix/ssl_none.c)
+		message(STATUS "Building without OpenSSL support")
 	endif()
 
 	# Authentication library
@@ -115,9 +125,12 @@ else() # Unix
 		target_sources(c-client PRIVATE src/osdep/unix/ckp_pam.c)
 
 		target_link_libraries(c-client ${PAM_LIB})
+
+		message(STATUS "Building with PAM support")
 	else()
 		# XXX: not PAM but still has auth, if even relevant
 		target_sources(c-client PRIVATE src/osdep/unix/ckp_nul.c)
+		message(STATUS "Building with without support")
 	endif()
 
 	# Extremely gross: mm_* callbacks come from application, so don't link here
@@ -162,4 +175,5 @@ if(BUILD_MTEST)
 	target_include_directories(mtest PRIVATE src/charset)
 	target_include_directories(mtest PRIVATE src/osdep/unix)
 	target_link_libraries(mtest c-client)
+	message(STATUS "Building mtest program")
 endif()
