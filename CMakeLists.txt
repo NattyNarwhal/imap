@@ -179,9 +179,9 @@ if(BUILD_MTEST)
 endif()
 
 # mlock program
-if(UNIX)
+if(NOT WIN32)
 	add_executable(mlock src/mlock/mlock.c)
-	set(LOCKPGM_PATH ${CMAKE_INSTALL_BINDIR}/mlock)
+	set(LOCKPGM ${CMAKE_INSTALL_FULL_BINDIR}/mlock)
 	install(TARGETS mlock RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	message(STATUS "Building mlock program (needed for mailbox locking)")
 endif()
