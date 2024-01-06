@@ -39,5 +39,10 @@ Use CMake. The following build flags are interesting:
 * pkg-config or CMake build files
 * Cleanup
   * Remove functionality only ever used by servers
+  * Remove various mailbox drivers
+    * Probably reduce to IMAP/POP3/NNTP
+    * Maybe mbox; maildir is unsupported, other local mail formats are decrepit
+    * Leave other drivers as stubs for compatibilities, maybe
   * Run clang-format
   * Clean up warnings, -Werror it
+* OAuth2 authenticator
