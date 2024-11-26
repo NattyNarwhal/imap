@@ -179,7 +179,7 @@ int tenex_isvalid (char *name,char *tmp)
   int ret = NIL;
   char *s,file[MAILTMPLEN];
   struct stat sbuf;
-  time_t tp[2];
+  struct utimbuf tp;
   errno = EINVAL;		/* assume invalid argument */
 				/* if file, get its status */
   if ((s = tenex_file (file,name)) && !stat (s,&sbuf)) {
@@ -201,9 +201,9 @@ int tenex_isvalid (char *name,char *tmp)
       close (fd);		/* close the file */
 				/* \Marked status? */
       if (sbuf.st_ctime > sbuf.st_atime) {
-	tp[0] = sbuf.st_atime;	/* preserve atime and mtime */
-	tp[1] = sbuf.st_mtime;
-	utime (file,tp);	/* set the times */
+	tp.actime = sbuf.st_atime;	/* preserve atime and mtime */
+	tp.modtime = sbuf.st_mtime;
+	utime (file,&tp);	/* set the times */
       }
     }
   }
@@ -647,14 +647,14 @@ long tenex_text (MAILSTREAM *stream,unsigned long msgno,STRING *bs,long flags)
 
 void tenex_flag (MAILSTREAM *stream,char *sequence,char *flag,long flags)
 {
-  time_t tp[2];
+  struct utimbuf tp;
   struct stat sbuf;
   if (!stream->rdonly) {	/* make sure the update takes */
     fsync (LOCAL->fd);
     fstat (LOCAL->fd,&sbuf);	/* get current write time */
-    tp[1] = LOCAL->filetime = sbuf.st_mtime;
-    tp[0] = time (0);		/* make sure read comes after all that */
-    utime (stream->mailbox,tp);
+    tp.modtime = LOCAL->filetime = sbuf.st_mtime;
+    tp.actime = time (0);		/* make sure read comes after all that */
+    utime (stream->mailbox,&tp);
   }
 }
 
@@ -818,7 +818,7 @@ void tenex_snarf (MAILSTREAM *stream)
 long tenex_expunge (MAILSTREAM *stream,char *sequence,long options)
 {
   long ret;
-  time_t tp[2];
+  struct utimbuf tp;
   struct stat sbuf;
   off_t pos = 0;
   int ld;
@@ -922,9 +922,9 @@ long tenex_expunge (MAILSTREAM *stream,char *sequence,long options)
       else MM_LOG ("No messages deleted, so no update needed",(long) NIL);
       fsync (LOCAL->fd);		/* force disk update */
       fstat (LOCAL->fd,&sbuf);	/* get new write time */
-      tp[1] = LOCAL->filetime = sbuf.st_mtime;
-      tp[0] = time (0);		/* reset atime to now */
-      utime (stream->mailbox,tp);
+      tp.modtime = LOCAL->filetime = sbuf.st_mtime;
+      tp.actime = time (0);		/* reset atime to now */
+      utime (stream->mailbox,&tp);
       MM_NOCRITICAL (stream);	/* release critical */
 				/* notify upper level of new mailbox size */
       mail_exists (stream,stream->nmsgs);
@@ -949,7 +949,7 @@ long tenex_expunge (MAILSTREAM *stream,char *sequence,long options)
 long tenex_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
 {
   struct stat sbuf;
-  time_t tp[2];
+  struct utimbuf tp;
   MESSAGECACHE *elt;
   unsigned long i,j,k;
   long ret = LONGT;
@@ -1015,11 +1015,11 @@ long tenex_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
     MM_LOG (LOCAL->buf,ERROR);
     ftruncate (fd,sbuf.st_size);
   }
-  if (ret) tp[0] = time (0) - 1;/* set atime to now-1 if successful copy */
+  if (ret) tp.actime = time (0) - 1;/* set atime to now-1 if successful copy */
 				/* else preserve \Marked status */
-  else tp[0] = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
-  tp[1] = sbuf.st_mtime;	/* preserve mtime */
-  utime (file,tp);		/* set the times */
+  else tp.actime = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
+  tp.modtime = sbuf.st_mtime;	/* preserve mtime */
+  utime (file,&tp);		/* set the times */
   close (fd);			/* close the file */
   unlockfd (ld,lock);		/* release exclusive parse/append permission */
   MM_NOCRITICAL (stream);	/* release critical */
@@ -1034,9 +1034,9 @@ long tenex_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
     if (!stream->rdonly) {	/* make sure the update takes */
       fsync (LOCAL->fd);
       fstat (LOCAL->fd,&sbuf);	/* get current write time */
-      tp[1] = LOCAL->filetime = sbuf.st_mtime;
-      tp[0] = time (0);		/* make sure atime remains greater */
-      utime (stream->mailbox,tp);
+      tp.modtime = LOCAL->filetime = sbuf.st_mtime;
+      tp.actime = time (0);		/* make sure atime remains greater */
+      utime (stream->mailbox,&tp);
     }
   }
   if (ret && mail_parameters (NIL,GET_COPYUID,NIL))
@@ -1057,7 +1057,7 @@ long tenex_append (MAILSTREAM *stream,char *mailbox,append_t af,void *data)
   struct stat sbuf;
   int fd,ld,c;
   char *flags,*date,tmp[MAILTMPLEN],file[MAILTMPLEN],lock[MAILTMPLEN];
-  time_t tp[2];
+  struct utimbuf tp;
   FILE *df;
   MESSAGECACHE elt;
   long f;
@@ -1155,11 +1155,11 @@ long tenex_append (MAILSTREAM *stream,char *mailbox,append_t af,void *data)
     }
     ret = NIL;
   }
-  if (ret) tp[0] = time (0) - 1;/* set atime to now-1 if successful copy */
+  if (ret) tp.actime = time (0) - 1;/* set atime to now-1 if successful copy */
 				/* else preserve \Marked status */
-  else tp[0] = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
-  tp[1] = sbuf.st_mtime;	/* preserve mtime */
-  utime (file,tp);		/* set the times */
+  else tp.actime = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
+  tp.modtime = sbuf.st_mtime;	/* preserve mtime */
+  utime (file,&tp);		/* set the times */
   fclose (df);			/* close the file */
   unlockfd (ld,lock);		/* release exclusive parse/append permission */
   MM_NOCRITICAL (stream);	/* release critical */
@@ -1321,10 +1321,10 @@ long tenex_parse (MAILSTREAM *stream)
   fstat (LOCAL->fd,&sbuf);	/* get status again to ensure time is right */
   LOCAL->filetime = sbuf.st_mtime;
   if (added && !stream->rdonly){/* make sure atime updated */
-    time_t tp[2];
-    tp[0] = time (0);
-    tp[1] = LOCAL->filetime;
-    utime (stream->mailbox,tp);
+    struct utimbuf tp;
+    tp.actime = time (0);
+    tp.modtime = LOCAL->filetime;
+    utime (stream->mailbox,&tp);
   }
   stream->silent = silent;	/* can pass up events now */
   mail_exists (stream,nmsgs);	/* notify upper level of new mailbox size */
@@ -1399,7 +1399,7 @@ void tenex_read_flags (MAILSTREAM *stream,MESSAGECACHE *elt)
 
 void tenex_update_status (MAILSTREAM *stream,unsigned long msgno,long syncflag)
 {
-  time_t tp[2];
+  struct utimbuf tp;
   struct stat sbuf;
   MESSAGECACHE *elt = mail_elt (stream,msgno);
   unsigned long j,k = 0;
@@ -1422,9 +1422,9 @@ void tenex_update_status (MAILSTREAM *stream,unsigned long msgno,long syncflag)
     if (syncflag) {		/* sync if requested */
       fsync (LOCAL->fd);
       fstat (LOCAL->fd,&sbuf);	/* get new write time */
-      tp[1] = LOCAL->filetime = sbuf.st_mtime;
-      tp[0] = time (0);		/* make sure read is later */
-      utime (stream->mailbox,tp);
+      tp.modtime = LOCAL->filetime = sbuf.st_mtime;
+      tp.actime = time (0);		/* make sure read is later */
+      utime (stream->mailbox,&tp);
     }
   }
 }

@@ -1280,8 +1280,8 @@ void mx_unlockindex (MAILSTREAM *stream)
 
 void mx_setdate (char *file,MESSAGECACHE *elt)
 {
-  time_t tp[2];
-  tp[0] = time (0);		/* atime is now */
-  tp[1] = mail_longdate (elt);	/* modification time */
-  utime (file,tp);		/* set the times */
+  struct utimbuf tp;
+  tp.actime = time (0);		/* atime is now */
+  tp.modtime = mail_longdate (elt);	/* modification time */
+  utime (file,&tp);		/* set the times */
 }

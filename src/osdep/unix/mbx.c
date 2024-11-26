@@ -209,7 +209,7 @@ int mbx_isvalid (MAILSTREAM **stream,char *name,char *tmp,int *ld,char *lock,
   off_t pos;
   char c,*s,*t,hdr[HDRSIZE];
   struct stat sbuf;
-  time_t tp[2];
+  struct utimbuf tp;
   int error = EINVAL;		/* assume invalid argument */
   if (ld) *ld = -1;		/* initially no lock */
   if ((s = mbx_file (tmp,name)) && !stat (s,&sbuf) &&
@@ -298,9 +298,9 @@ int mbx_isvalid (MAILSTREAM **stream,char *name,char *tmp,int *ld,char *lock,
     else lseek (fd,0,L_SET);	/* else rewind to start */
 				/* \Marked status? */
     if (sbuf.st_ctime > sbuf.st_atime) {
-      tp[0] = sbuf.st_atime;	/* preserve atime and mtime */
-      tp[1] = sbuf.st_mtime;
-      utime (tmp,tp);		/* set the times */
+      tp.actime = sbuf.st_atime;	/* preserve atime and mtime */
+      tp.modtime = sbuf.st_mtime;
+      utime (tmp,&tp);		/* set the times */
     }
   }
 				/* in case INBOX but not mbx format */
@@ -759,22 +759,22 @@ long mbx_text (MAILSTREAM *stream,unsigned long msgno,STRING *bs,long flags)
 
 void mbx_flag (MAILSTREAM *stream,char *sequence,char *flag,long flags)
 {
-  time_t tp[2];
+  struct utimbuf tp;
   struct stat sbuf;
   unsigned long oldpid = LOCAL->lastpid;
 				/* make sure the update takes */
   if (!stream->rdonly && LOCAL && (LOCAL->fd >= 0) && (LOCAL->ld >= 0)) {
     fsync (LOCAL->fd);
     fstat (LOCAL->fd,&sbuf);	/* get current write time */
-    tp[1] = LOCAL->filetime = sbuf.st_mtime;
+    tp.modtime = LOCAL->filetime = sbuf.st_mtime;
 				/* we are the last flag updater */
     LOCAL->lastpid = (unsigned long) getpid ();
 				/* update header if needed */
     if (((LOCAL->ffuserflag < NUSERFLAGS) &&
 	 stream->user_flags[LOCAL->ffuserflag]) || (oldpid != LOCAL->lastpid))
       mbx_update_header (stream);
-    tp[0] = time (0);		/* make sure read comes after all that */
-    utime (stream->mailbox,tp);
+    tp.actime = time (0);		/* make sure read comes after all that */
+    utime (stream->mailbox,&tp);
   }
   if (LOCAL->ld >= 0) {		/* unlock now */
     unlockfd (LOCAL->ld,LOCAL->lock);
@@ -984,7 +984,7 @@ void mbx_snarf (MAILSTREAM *stream)
 long mbx_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
 {
   struct stat sbuf;
-  time_t tp[2];
+  struct utimbuf tp;
   MESSAGECACHE *elt;
   unsigned long i,j,k,m;
   long ret = LONGT;
@@ -1069,11 +1069,11 @@ long mbx_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
     mail_free_searchset (&source);
     mail_free_searchset (&dest);
   }
-  if (ret) tp[0] = time (0) - 1;/* set atime to now-1 if successful copy */
+  if (ret) tp.actime = time (0) - 1;/* set atime to now-1 if successful copy */
 				/* else preserve \Marked status */
-  else tp[0] = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
-  tp[1] = sbuf.st_mtime;	/* preserve mtime */
-  utime (file,tp);		/* set the times */
+  else tp.actime = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
+  tp.modtime = sbuf.st_mtime;	/* preserve mtime */
+  utime (file,&tp);		/* set the times */
   close (fd);			/* close the file */
   MM_NOCRITICAL (stream);	/* release critical */
   unlockfd (ld,lock);		/* release exclusive parse/append permission */
@@ -1105,7 +1105,7 @@ long mbx_append (MAILSTREAM *stream,char *mailbox,append_t af,void *data)
   struct stat sbuf;
   int fd,ld;
   char *flags,*date,tmp[MAILTMPLEN],file[MAILTMPLEN],lock[MAILTMPLEN];
-  time_t tp[2];
+  struct utimbuf tp;
   FILE *df;
   MESSAGECACHE elt;
   long f;
@@ -1207,11 +1207,11 @@ long mbx_append (MAILSTREAM *stream,char *mailbox,append_t af,void *data)
     }
     else mail_free_searchset (&dst);
 				/* set atime to now-1 if successful copy */
-    if (ret) tp[0] = time (0) - 1;
+    if (ret) tp.actime = time (0) - 1;
 				/* else preserve \Marked status */
-    else tp[0] = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
-    tp[1] = sbuf.st_mtime;	/* preserve mtime */
-    utime (file,tp);		/* set the times */
+    else tp.actime = (sbuf.st_ctime > sbuf.st_atime) ? sbuf.st_atime : time(0);
+    tp.modtime = sbuf.st_mtime;	/* preserve mtime */
+    utime (file,&tp);		/* set the times */
     fclose (df);		/* close the file */
     MM_NOCRITICAL (dstream);	/* release critical */
   }
@@ -1441,10 +1441,10 @@ long mbx_parse (MAILSTREAM *stream)
   fstat (LOCAL->fd,&sbuf);	/* get status again to ensure time is right */
   LOCAL->filetime = sbuf.st_mtime;
   if (added && !stream->rdonly){/* make sure atime updated */
-    time_t tp[2];
-    tp[0] = time (0);
-    tp[1] = LOCAL->filetime;
-    utime (stream->mailbox,tp);
+    struct utimbuf tp;
+    tp.actime = time (0);
+    tp.modtime = LOCAL->filetime;
+    utime (stream->mailbox,&tp);
   }
   stream->silent = silent;	/* can pass up events now */
   mail_exists (stream,nmsgs);	/* notify upper level of new mailbox size */
@@ -1691,7 +1691,7 @@ unsigned long mbx_hdrpos (MAILSTREAM *stream,unsigned long msgno,
 unsigned long mbx_rewrite (MAILSTREAM *stream,unsigned long *reclaimed,
 			   long flags)
 {
-  time_t tp[2];
+  struct utimbuf tp;
   struct stat sbuf;
   off_t pos,ppos;
   int ld;
@@ -1810,9 +1810,9 @@ unsigned long mbx_rewrite (MAILSTREAM *stream,unsigned long *reclaimed,
     fsync (LOCAL->fd);		/* force disk update */
   }
   fstat (LOCAL->fd,&sbuf);	/* get new write time */
-  tp[1] = LOCAL->filetime = sbuf.st_mtime;
-  tp[0] = time (0);		/* reset atime to now */
-  utime (stream->mailbox,tp);
+  tp.modtime = LOCAL->filetime = sbuf.st_mtime;
+  tp.actime = time (0);		/* reset atime to now */
+  utime (stream->mailbox,&tp);
   unlockfd (ld,lock);		/* release exclusive parse/append permission */
 				/* notify upper level of new mailbox size */
   mail_exists (stream,stream->nmsgs);

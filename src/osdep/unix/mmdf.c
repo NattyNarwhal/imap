@@ -366,7 +366,7 @@ long mmdf_isvalid (char *name,char *tmp)
   int ret = NIL;
   char *t,file[MAILTMPLEN];
   struct stat sbuf;
-  time_t tp[2];
+  struct utimbuf tp;
   errno = EINVAL;		/* assume invalid argument */
 				/* must be non-empty file */
   if ((t = dummy_file (file,name)) && !stat (t,&sbuf)) {
@@ -377,9 +377,9 @@ long mmdf_isvalid (char *name,char *tmp)
       close (fd);		/* close the file */
 				/* \Marked status? */
       if ((sbuf.st_ctime > sbuf.st_atime) || (sbuf.st_mtime > sbuf.st_atime)) {
-	tp[0] = sbuf.st_atime;	/* preserve atime and mtime */
-	tp[1] = sbuf.st_mtime;
-	utime (file,tp);	/* set the times */
+	tp.actime = sbuf.st_atime;	/* preserve atime and mtime */
+	tp.modtime = sbuf.st_mtime;
+	utime (file,&tp);	/* set the times */
       }
     }
   }
@@ -1024,7 +1024,7 @@ long mmdf_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
   int fd;
   char *s,file[MAILTMPLEN];
   DOTLOCK lock;
-  time_t tp[2];
+  struct utimbuf tp;
   unsigned long i,j;
   MESSAGECACHE *elt;
   long ret = T;
@@ -1126,12 +1126,12 @@ long mmdf_copy (MAILSTREAM *stream,char *sequence,char *mailbox,long options)
     mail_free_searchset (&source);
     mail_free_searchset (&dest);
   }
-  tp[1] = time (0);		/* set mtime to now */
-  if (ret) tp[0] = tp[1] - 1;	/* set atime to now-1 if successful copy */
-  else tp[0] =			/* else preserve \Marked status */
+  tp.modtime = time (0);		/* set mtime to now */
+  if (ret) tp.actime = tp.modtime - 1;	/* set atime to now-1 if successful copy */
+  else tp.actime =			/* else preserve \Marked status */
 	 ((sbuf.st_ctime > sbuf.st_atime) || (sbuf.st_mtime > sbuf.st_atime)) ?
-	 sbuf.st_atime : tp[1];
-  utime (file,tp);		/* set the times */
+	 sbuf.st_atime : tp.modtime;
+  utime (file,&tp);		/* set the times */
   mmdf_unlock (fd,NIL,&lock);	/* unlock and close mailbox */
   if (tstream) {		/* update last UID if we can */
     MMDFLOCAL *local = (MMDFLOCAL *) tstream->local;
@@ -1165,7 +1165,7 @@ long mmdf_append (MAILSTREAM *stream,char *mailbox,append_t af,void *data)
   int fd;
   unsigned long i;
   char *flags,*date,buf[BUFLEN],tmp[MAILTMPLEN],file[MAILTMPLEN];
-  time_t tp[2];
+  struct utimbuf tp;
   FILE *sf,*df;
   MESSAGECACHE elt;
   DOTLOCK lock;
@@ -1279,20 +1279,20 @@ long mmdf_append (MAILSTREAM *stream,char *mailbox,append_t af,void *data)
   }
   fstat (fd,&sbuf);		/* get current file size */
   rewind (sf);
-  tp[1] = time (0);		/* set mtime to now */
+  tp.modtime = time (0);		/* set mtime to now */
 				/* write all messages */
   if (!mmdf_append_msgs (tstream,sf,df,au ? dst : NIL) ||
       (fflush (df) == EOF) || fsync (fd)) {
     sprintf (buf,"Message append failed: %s",strerror (errno));
     MM_LOG (buf,ERROR);
     ftruncate (fd,sbuf.st_size);
-    tp[0] =			/* preserve \Marked status */
+    tp.actime =			/* preserve \Marked status */
       ((sbuf.st_ctime > sbuf.st_atime) || (sbuf.st_mtime > sbuf.st_atime)) ?
-      sbuf.st_atime : tp[1];
+      sbuf.st_atime : tp.modtime;
     ret = NIL;			/* return error */
   }
-  else tp[0] = tp[1] - 1;	/* set atime to now-1 if successful copy */
-  utime (file,tp);		/* set the times */
+  else tp.actime = tp.modtime - 1;	/* set atime to now-1 if successful copy */
+  utime (file,&tp);		/* set the times */
   fclose (sf);			/* done with scratch file */
 				/* force UIDVALIDITY assignment now */
   if (tstream && !tstream->uid_validity) tstream->uid_validity = time (0);
@@ -1526,31 +1526,31 @@ void mmdf_unlock (int fd,MAILSTREAM *stream,DOTLOCK *lock)
 {
   if (stream) {			/* need to muck with times? */
     struct stat sbuf;
-    time_t tp[2];
+    struct utimbuf tp;
     time_t now = time (0);
     fstat (fd,&sbuf);		/* get file times */
     if (LOCAL->ld >= 0) {	/* yes, readwrite session? */
-      tp[0] = now;		/* set atime to now */
+      tp.actime = now;		/* set atime to now */
 				/* set mtime to (now - 1) if necessary */
-      tp[1] = (now > sbuf.st_mtime) ? sbuf.st_mtime : now - 1;
+      tp.modtime = (now > sbuf.st_mtime) ? sbuf.st_mtime : now - 1;
     }
     else if (stream->recent) {	/* readonly with recent messages */
       if ((sbuf.st_atime >= sbuf.st_mtime) ||
 	  (sbuf.st_atime >= sbuf.st_ctime))
 				/* keep past mtime, whack back atime */
-	tp[0] = (tp[1] = (sbuf.st_mtime < now) ? sbuf.st_mtime : now) - 1;
+	tp.actime = (tp.modtime = (sbuf.st_mtime < now) ? sbuf.st_mtime : now) - 1;
       else now = 0;		/* no time change needed */
     }
 				/* readonly with no recent messages */
     else if ((sbuf.st_atime < sbuf.st_mtime) ||
 	     (sbuf.st_atime < sbuf.st_ctime)) {
-      tp[0] = now;		/* set atime to now */
+      tp.actime = now;		/* set atime to now */
 				/* set mtime to (now - 1) if necessary */
-      tp[1] = (now > sbuf.st_mtime) ? sbuf.st_mtime : now - 1;
+      tp.modtime = (now > sbuf.st_mtime) ? sbuf.st_mtime : now - 1;
     }
     else now = 0;		/* no time change needed */
 				/* set the times, note change */
-    if (now && !utime (stream->mailbox,tp)) LOCAL->filetime = tp[1];
+    if (now && !utime (stream->mailbox,&tp)) LOCAL->filetime = tp.modtime;
   }
   flock (fd,LOCK_UN);		/* release flock'ers */
   if (!stream) close (fd);	/* close the file if no stream */
@@ -2238,7 +2238,7 @@ long mmdf_rewrite (MAILSTREAM *stream,unsigned long *nexp,DOTLOCK *lock,
   MESSAGECACHE *elt;
   MMDFFILE f;
   char *s;
-  time_t tp[2];
+  struct utimbuf tp;
   long ret,flag;
   unsigned long i,j;
   unsigned long recent = stream->recent;
@@ -2391,9 +2391,9 @@ long mmdf_rewrite (MAILSTREAM *stream,unsigned long *nexp,DOTLOCK *lock,
     mail_exists (stream,stream->nmsgs);
     mail_recent (stream,recent);
 				/* set atime to now, mtime a second earlier */
-    tp[1] = (tp[0] = time (0)) - 1;
+    tp.modtime = (tp.actime = time (0)) - 1;
 				/* set the times, note change */
-    if (!utime (stream->mailbox,tp)) LOCAL->filetime = tp[1];
+    if (!utime (stream->mailbox,&tp)) LOCAL->filetime = tp.modtime;
     close (LOCAL->fd);		/* close and reopen file */
     if ((LOCAL->fd = open (stream->mailbox,O_RDWR,
 			   (long) mail_parameters (NIL,GET_MBXPROTECTION,NIL)))
