@@ -45,4 +45,5 @@ Use CMake. The following build flags are interesting:
     * Leave other drivers as stubs for compatibilities, maybe
   * Run clang-format
   * Clean up warnings, -Werror it
-* OAuth2 authenticator
+* Integrate Chappa's patches in vendored copy from Alpine
+  * This includes an OAuth2 authenticator

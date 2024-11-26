@@ -3253,7 +3253,6 @@ IMAPPARSEDREPLY *imap_send_qstring (MAILSTREAM *stream,char *tag,char **s,
 				    SIZEDTEXT *as,char *limit)
 {
   unsigned long j;
-  char c;
   STRING st;
 				/* in case needed */
   INIT (&st,mail_string,(void *) as->data,as->size);

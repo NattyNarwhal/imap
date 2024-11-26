@@ -143,7 +143,7 @@ else() # Unix
 	endif()
 endif()
 
-#set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-error=pointer-sign -Wno-error=parentheses")
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-error=pointer-sign -Wno-error=parentheses")
 
 set_target_properties(c-client PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(c-client PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
